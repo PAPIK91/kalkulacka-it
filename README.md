@@ -5,6 +5,7 @@ Aktuální balíčky ze dne 26. 10. 2026 pro nasazení na vlastním serveru.
 - [Stáhnout kompletní projekt a hotovou aplikaci](Kalkulacka-sluzeb-pro-IT.zip?raw=true)
 - [Stáhnout pouze dokumentaci pro IT](Dokumentace-pro-IT.zip?raw=true)
 - [Číst návod k nasazení](NASAZENI.txt)
+- [Přehled aplikace a architektury pro IT](HIGH-LEVEL.md)
 
 Verze zahrnuje regiony Zahraničí CZ/SK s vlastními sazbami, přehledný zápis UZ, výraznější texty a zobrazení doplatku pouze při kladné částce. Kalkulačka je veřejně přístupná, správa proměnných je chráněná heslem.
 
