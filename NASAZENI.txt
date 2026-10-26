@@ -1,0 +1,209 @@
+# Nasazení kalkulačky na firemní server
+
+Příkazy jsou relativní k adresáři obsahujícím `package.json` a složku `selfhost/`. Ukázkovou doménu `kalkulacka.example.cz` nahraďte skutečnou adresou přidělenou IT. Dokument neobsahuje přístupy ani údaje stávajícího serveru.
+
+## Architektura a požadavky
+
+Veřejné React rozhraní používá stejné výpočtové jádro a API handlery jako původní aplikace. Varianta `selfhost/` nahrazuje Cloudflare D1 lokální SQLite databází; nevyžaduje ChatGPT ani Sites. Běžná kalkulačka je dostupná bez přihlášení, zápis ceníku vyžaduje heslovou relaci ověřovanou serverem.
+
+- Linux s Docker Engine a pluginem Docker Compose; pro nasazení lze použít i jiný podporovaný kontejnerový runtime.
+- Runtime Node.js 24 nebo novější kvůli vestavěnému `node:sqlite`. Dockerfile vychází z oficiálního `node:24-bookworm-slim`.
+- Pro sestavení ze zdrojů Node.js 24, npm a přístup k registru závislostí. Pro spuštění hotového `selfhost/dist/` nejsou potřeba další npm závislosti.
+- HTTPS reverzní proxy, DNS záznam zvolené domény a trvalé úložiště pro `/data`.
+
+## Sestavení a kontrola
+
+Použijte uzamčené verze v `package-lock.json`:
+
+```sh
+npm ci
+npm run build
+npm run typecheck
+npm test
+npm run test:selfhost
+npm run test:http
+```
+
+Výstup `selfhost/dist/` obsahuje statický frontend, `api.mjs`, `runtime.mjs` a `server.mjs`. Build musí proběhnout před příkazem Docker build. Self-host testy vytvářejí vlastní dočasnou databázi; HTTP test používá místní port 4328. Nespouštějte testy proti produkční databázi.
+
+```sh
+docker build -t kalkulacka-sluzeb:1 selfhost
+```
+
+Provozní server nemusí mít zdrojové vývojové závislosti, pokud dostane hotový runtime nebo vytvořený kontejnerový obraz. Při předání obrazu mezi různými architekturami sestavte obraz pro architekturu cílového serveru.
+
+## Docker Compose
+
+Balíček obsahuje `docker-compose.yml`, `.env.example` a `Caddyfile.example`.
+
+```sh
+cp .env.example .env
+```
+
+Upravte `.env` editorem podle interních pravidel. Nastavte skutečný `PUBLIC_ORIGIN` a případně místní port. Do `.env` nepatří heslo správce. Předpřipravená konfigurace odpovídá tomuto principu:
+
+```yaml
+services:
+  kalkulacka:
+    build: ./selfhost
+    image: kalkulacka-sluzeb:1
+    container_name: kalkulacka-sluzeb
+    restart: unless-stopped
+    environment:
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Nastavte PUBLIC_ORIGIN v .env}
+    ports:
+      - "127.0.0.1:${PORT:-3000}:3000"
+    volumes:
+      - pricing-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/config').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  pricing-data:
+    name: kalkulacka-sluzeb-data
+```
+
+```sh
+docker compose up -d --build
+docker compose ps
+```
+
+Kontejner běží jako uživatel `node` (UID/GID 1000). Pojmenovaný volume při prvním vytvoření přebírá vlastnictví připraveného `/data` z obrazu. Při použití bind mountu připravte adresář zapisovatelný pro UID/GID 1000 a omezte jeho přístupová práva; neměňte kvůli tomu kontejner na trvalý provoz pod rootem.
+
+`restart: unless-stopped` obnoví službu po restartu Dockeru, pokud ji správce výslovně nezastavil. Docker Engine musí být na cílovém serveru automaticky spouštěn systémem.
+
+## Doména, HTTPS a síť
+
+IT vytvoří DNS záznam pro zvolenou doménu na vstupní reverzní proxy. Databáze ani port Node serveru se přímo nezpřístupňují internetu.
+
+Ukázka Caddy na stejném hostiteli:
+
+```caddyfile
+kalkulacka.example.cz {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:3000
+}
+```
+
+Při změně `PORT` v `.env` upravte také port v proxy.
+
+Pokud Caddy běží jako další kontejner, jeho `127.0.0.1` neodkazuje na hostitele. Připojte oba kontejnery do společné Docker sítě, směrujte na název služby `kalkulacka:3000` a publikaci portu můžete vynechat. Síťové propojení zaneste do trvalé konfigurace Compose obou služeb.
+
+`PUBLIC_ORIGIN` musí být přesně výsledný HTTPS origin v prohlížeči (schéma, doména a případný port, bez podadresáře). Slouží pro kontrolu hlavičky Origin při zápisu a pro bezpečné HTTPS cookies. Aplikace nepoužívá klientem podvržené forwarded hlavičky k určení důvěryhodného originu. Nesprávná hodnota způsobí odmítání přihlášení nebo ukládání.
+
+| Proměnná | Význam |
+|---|---|
+| `PUBLIC_ORIGIN` | Povinná provozní adresa, např. `https://kalkulacka.example.cz`. |
+| `HOST` | Mimo Docker výchozí `127.0.0.1`; Dockerfile nastavuje `0.0.0.0` uvnitř kontejneru. |
+| `PORT` | Port Node serveru, výchozí `3000`. |
+| `DATA_DIR` | Mimo Docker výchozí `./data`; Dockerfile používá `/data`. |
+
+## Ceník a přenos nastavení
+
+Bez importu aplikace použije výchozí ceník v `lib/pricing.ts`. Přiložený `config.example.json` ukazuje tento výchozí ceník; není kopií provozní databáze ani automatickým importem. Upravený ceník lze převzít z veřejného `GET /api/config` původní instalace. Přenos se týká pouze cenových parametrů, nikoli hesla nebo uživatelských relací.
+
+Před prvním spuštěním nebo před prvním nastavením správce vložte do datového úložiště `/data/initial-config.json`. Soubor může obsahovat samotný objekt ceníku nebo odpověď s obálkou `{ "config": ... }`. Hodnoty se ověří společným validátorem; neplatný import zabrání startu. Jakmile databáze obsahuje nastaveného správce a uložený ceník, další spuštění jej seed souborem nepřepisuje.
+
+U čerstvého pojmenovaného volume lze připravit kontejner bez spuštění a soubor do něj přenést:
+
+```sh
+docker compose create
+docker cp initial-config.json kalkulacka-sluzeb:/data/initial-config.json
+docker compose up -d
+```
+
+Ověřte, že soubor je čitelný pro uživatele `node`. Neslučujte tímto postupem databáze dvou již používaných instalací.
+
+## První nastavení správce
+
+Při prázdné databázi aplikace vytvoří náhodný soubor `/data/setup-token` s právy 0600. Token se nevypisuje do aplikačních logů. Oprávněný správce serveru jej získá přímo z chráněného datového úložiště a bezpečným kanálem předá pouze určenému správci kalkulačky.
+
+Správce otevře odkaz ve tvaru:
+
+```text
+https://kalkulacka.example.cz/#setup=TOKEN
+```
+
+`TOKEN` je zástupný text, nikoli skutečný přístup. Token nevkládejte do DNS, repozitáře, Dockerfile, ticketu dostupného širokému okruhu osob ani do běžných příkazových argumentů. Fragment se po načtení odstraní z adresního řádku; stránka jej drží jen v paměti pro požadavky prvního nastavení. Při obnovení stránky před dokončením použijte původní jednorázový odkaz znovu.
+
+Ve **Správě ceníku** určený správce sám nastaví heslo o délce 12 až 256 znaků. Po úspěchu se tokenový soubor smaže a starý odkaz přestane opravňovat k nastavení. Veřejný návštěvník bez tokenu správce vytvořit nemůže. Běžné další přihlášení vyžaduje pouze heslo, bez externího účtu.
+
+Heslo je uloženo jako solený PBKDF2 hash; relace mají hashované náhodné tokeny, časově omezenou platnost a HttpOnly/SameSite=Strict cookie, při HTTPS také Secure. Server kontroluje oprávnění každého zápisu, Origin, platnost parametrů a verzi ceníku. Opakované neúspěšné přihlášení vede k dočasnému zámku. Projekt neobsahuje samoobslužné obnovení zapomenutého hesla; obnovu řeší oprávněné IT z chráněné zálohy nebo řízeným administrátorským postupem.
+
+## Závěrečné ověření
+
+- Otevření kalkulačky přes skutečnou HTTPS doménu bez účtu.
+- Platný TLS certifikát a přesměrování HTTP na HTTPS v proxy.
+- Přihlášení správce, změna testovacího parametru, uložení a následné vrácení původní hodnoty.
+- Odhlášení a odmítnutí změny ceníku bez platné relace.
+- Zachování ceníku a přístupu po restartu kontejneru.
+- Referenční CZ Standard při 45 km: 1 600 bez DPH, DPH 336, celkem 1 936 při výchozích sazbách; přidání a odstranění vyproštění 30 minut přičte a odečte 900 bez DPH.
+
+Provozní kontrola:
+
+```sh
+docker compose ps
+curl --fail --silent --show-error https://kalkulacka.example.cz/api/config
+```
+
+Odpověď veřejného API obsahuje ceník a stav přihlášení, nikoli heslový hash nebo token. Za citlivá provozní data považujte samotnou databázi a její zálohy.
+
+## Záloha a obnova
+
+Data jsou v `/data/pricing.sqlite` a případných SQLite WAL souborech. Nekopírujte jen živý hlavní soubor databáze. Níže uvedená konzistentní záloha celého volume vyžaduje krátkou odstávku; naplánujte ji mimo používání.
+
+```sh
+mkdir -p backups
+chmod 700 backups
+docker compose stop kalkulacka
+docker run --rm --user 0:0 \
+  -v kalkulacka-sluzeb-data:/data:ro \
+  -v "$PWD/backups:/backup" \
+  kalkulacka-sluzeb:1 \
+  sh -c 'umask 077; tar -czf /backup/pricing-backup.tar.gz -C /data .'
+docker compose start kalkulacka
+docker compose ps
+```
+
+Zvolte jedinečný název zálohy, aby se nepřepisovala předchozí kopie. Záloha obsahuje ceník, heslový hash i relace; uchovávejte ji podle interních pravidel, šifrovaně a s omezeným přístupem. Pokud příkaz zálohy selže, před opuštěním odstávky službu znovu spusťte a ověřte její zdraví.
+
+Obnovujte pouze prověřenou zálohu do vyhrazeného nového volume; nikdy nepřekrývejte běžící databázi:
+
+```sh
+docker compose stop kalkulacka
+docker volume create kalkulacka-sluzeb-restore
+docker run --rm --user 0:0 \
+  -v kalkulacka-sluzeb-restore:/data \
+  -v "$PWD/backups:/backup:ro" \
+  kalkulacka-sluzeb:1 \
+  sh -c 'tar -xzf /backup/pricing-backup.tar.gz -C /data; chown -R 1000:1000 /data; chmod 700 /data'
+```
+
+Poté přepněte jméno datového volume v Compose na `kalkulacka-sluzeb-restore`, spusťte `docker compose up -d` a ověřte ceník, přihlášení a referenční cenu. Původní volume ponechte do potvrzení obnovy. Nepoužívejte `docker compose down -v`, pokud nechcete vědomě smazat data.
+
+## Aktualizace
+
+Vytvořte zálohu, sestavte novou označenou verzi obrazu (`npm run build` a Docker build), zachovejte volume a `PUBLIC_ORIGIN`, změňte tag v Compose a spusťte `docker compose up -d`. Ověřte provoz a referenční cenu. Při návratu na starý obraz zkontrolujte kompatibilitu databázového schématu; tento projekt aktuálně vytváří dvě tabulky při startu.
+
+## Obchodní pravidla k potvrzení vlastníkem
+
+- Doplatek používá `max(0, (cena s DPH − GOP) × 1,20)`. Při nulovém nebo záporném rozdílu nevzniká doplatek a jeho řádek se v souhrnu ani UZ nezobrazuje.
+- Přetah přičítá další paušál a vlastní km nad paušál.
+- Každá cenová položka, palivový příplatek, DPH a doplatek se zaokrouhlují na dvě desetinná místa; přesná polovina se zaokrouhluje od nuly. Výpočty používají celé haléře/centy.
+
+Tyto výklady jsou technicky implementované a testované, ale jejich obchodní schválení patří vlastníkovi aplikace před ostrým použitím. IT při nasazení nemá svévolně měnit ceník ani výpočetní pravidla.
+
+## Zahraniční kalkulace
+
+Zahraničí CZ používá měnu a DPH z CZ ceníku, Zahraničí SK z SK ceníku. V uloženém ceníku zůstávají tři původní regiony; přidání zahraničních voleb nevyžaduje migraci databáze.
+
+Operátor vybírá paušál nebo hodinový výpočet (počet hodin × hodinová sazba), zadává vlastní cenu za kilometr a celou trasu. Ruční sazby začínají na 0. Kilometry nejsou zahrnuté v paušálu, účtuje se celá trasa. Jedinou dostupnou doplňkovou službou je Jiná služba s vlastním názvem a cenou; ostatní domácí příplatky a palivo se neúčtují. Při přechodu mezi měnami se příslušné ruční částky resetují, aby se nepřenesla stejná hodnota v jiné měně.
