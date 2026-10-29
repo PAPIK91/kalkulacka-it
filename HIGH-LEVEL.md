@@ -1,6 +1,6 @@
 # Kalkulačka služeb – přehled pro IT
 
-Stav předávané verze: **26. 10. 2026**. Instalační postup je v [NASAZENI.txt](NASAZENI.txt), zdroje a hotový runtime v [kompletním balíčku](Kalkulacka-sluzeb-pro-IT.zip?raw=true).
+Stav předávané verze: **29. 10. 2026**. Instalační postup je v [NASAZENI.txt](NASAZENI.txt), zdroje a hotový runtime v [kompletním balíčku](Kalkulacka-sluzeb-pro-IT.zip?raw=true).
 
 ## Účel a přístupy
 
@@ -23,7 +23,9 @@ Vstupy jednotlivých kalkulací a UZ se trvale neukládají. Operátor přenáš
 | Zahraničí CZ | Ruční sazby; měna a DPH převzaté z CZ ceníku. |
 | Zahraničí SK | Ruční sazby; měna a DPH převzaté z SK ceníku. |
 
-Domácí služby: RMQ Standard, Nadrozměr, Hydraulika, DPV a Odemčení vozidla. Výpočet kombinuje paušál, kilometry nad zahrnutý limit a zvolené doplňky: vyproštění, manipulaci, čekání, úschovu, noc, víkend/svátek, vozíčky, brýle, přetah, mýto, jinou službu a volitelný palivový příplatek. Lze zadat celkovou trasu nebo přímo kilometry nad paušál.
+Domácí služby: RMQ Standard, Nadrozměr, Hydraulika, DPV a Odemčení vozidla. Výpočet kombinuje paušál, kilometry nad zahrnutý limit a zvolené doplňky: noc, víkend/svátek, vozíčky, brýle, přetah, mýto, jinou službu a volitelný palivový příplatek. U RMQ služeb zůstávají také vyproštění, ztížená manipulace, čekání a úschova. U DPV a Odemčení vozidla je nahrazuje práce mechanika na místě.
+
+U DPV a Odemčení vozidla zadá operátor dobu práce mechanika po 30 minutách; účtuje se každý započatý půlhodinový interval. Správce nastavuje oddělenou cenu za 30 minut pro každou z obou služeb v CZ, Praha/Brno a SK ceníku. Nové sazby jsou při přechodu nulové a doplní je správce.
 
 V zahraničí operátor vybírá **paušál**, nebo **počet hodin × hodinovou sazbu**, a zadává vlastní sazbu za kilometr. Ruční sazby začínají na **0**. Účtuje se **celá trasa**; v paušálu nejsou zahrnuté kilometry. Jediným doplňkem je **Jiná služba** s vlastním názvem a cenou. Domácí příplatky ani palivo se neúčtují. Při změně měny se příslušné ruční částky resetují.
 
@@ -53,7 +55,7 @@ IT nastaví doménu, DNS, HTTPS proxy, přesný `PUBLIC_ORIGIN`, úložiště a 
 
 ## Ověření a odpovědnosti
 
-Předávaná verze má úspěšné sestavení a TypeScript kontrolu, **61 testů cenového jádra** a **18 kontrol Node/SQLite** při posledním sestavení. **21 HTTP kontrol** bylo úspěšných při předchozím ověření; po posledních změnách nebyl celý tento soubor znovu spuštěn. Doplnění tohoto dokumentu nezahrnuje nové testování ani nasazení.
+Aktuální zdroje prošly TypeScript kontrolou a self-host sestavením. **61 cenových testů** a **18 kontrol Node/SQLite** byly úspěšné před přidáním práce mechanika; tuto novou sazbu proto nepokrývají. **21 HTTP kontrol** bylo úspěšných při dřívějším ověření; žádný z těchto testovacích souborů nebyl po poslední změně znovu spuštěn.
 
 **IT** odpovídá za infrastrukturu, HTTPS, dostupnost, zabezpečení dat, zálohy, obnovu a aktualizace. Před převzetím ověří na cílovém prostředí veřejný přístup, přihlášení, ukládání ceníku, zachování dat po restartu a referenční cenu.
 
