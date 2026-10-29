@@ -141,6 +141,10 @@ Ve **Správě ceníku** určený správce sám nastaví heslo o délce 12 až 25
 
 Heslo je uloženo jako solený PBKDF2 hash; relace mají hashované náhodné tokeny, časově omezenou platnost a HttpOnly/SameSite=Strict cookie, při HTTPS také Secure. Server kontroluje oprávnění každého zápisu, Origin, platnost parametrů a verzi ceníku. Opakované neúspěšné přihlášení vede k dočasnému zámku. Projekt neobsahuje samoobslužné obnovení zapomenutého hesla; obnovu řeší oprávněné IT z chráněné zálohy nebo řízeným administrátorským postupem.
 
+## Historie změn ceníku
+
+Při každém uložení správce zadá jméno/přezdívku. Aplikace uloží čas, verzi a rozdíly hodnot v tabulce `price_audit` atomicky spolu s novým ceníkem. Podstránka Historie změn i endpoint `/api/audit` vyžadují platné heslové přihlášení správce. Databáze historii uchovává celou, zobrazení nabízí posledních 500 změn. Záznamy vznikají až po nasazení této verze. Jméno je zadáno uživatelem a není ověřením samostatného účtu.
+
 ## Závěrečné ověření
 
 - Otevření kalkulačky přes skutečnou HTTPS doménu bez účtu.

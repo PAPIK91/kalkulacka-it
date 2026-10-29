@@ -11,7 +11,7 @@ Aplikace počítá cenu služeb pro zákazníka a připravuje textový zápis do
 | Kalkulačka | Veřejná bez přihlášení. Operátor zadává parametry a GOP, vidí rozpis a kopíruje UZ. |
 | Správa ceníku | Určený správce se přihlašuje pouze heslem a upravuje cenové parametry. Server ověřuje každý zápis. |
 
-Vstupy jednotlivých kalkulací a UZ se trvale neukládají. Operátor přenáší zápis do navazujícího systému.
+Vstupy jednotlivých kalkulací a UZ se trvale neukládají. Operátor přenáší zápis do navazujícího systému. Při uložení změny ceníku správce zadá jméno nebo přezdívku; heslem chráněná Historie změn ukládá čas, upravené položky a původní/nové hodnoty. Jméno je uživatelem uvedené, protože aplikace používá společné správcovské heslo, nikoli osobní účty.
 
 ## Hlavní funkce
 
@@ -38,12 +38,16 @@ Výsledek obsahuje položky, cenu bez DPH, DPH, celkem a GOP. Doplatek vychází
 | React rozhraní | Kalkulačka, okamžitý přepočet, UZ a formulář správy. |
 | Společné cenové jádro | Validace, výpočty a výchozí ceník; peníze počítá v celých haléřích/centech s definovaným zaokrouhlováním. |
 | Node.js 24+ / API | Vydává rozhraní a ceník, přihlašuje správce, ověřuje a ukládá změny; nabízí také endpoint výpočtu. |
-| SQLite | Trvalý ceník, verze, heslový hash a správcovské relace. |
+| SQLite | Trvalý ceník, verze, heslový hash, správcovské relace a protokol změn ceníku. |
 | Docker + HTTPS proxy | Spuštění aplikace a přístup přes firemní doménu; přiložen je vzor Caddy. |
 
 Prohlížeč načte ceník z API a přepočítává vstupy společným cenovým jádrem. UZ kopíruje do schránky. Správce se přihlásí přes HTTPS; server vytvoří časově omezenou relaci v HttpOnly cookie. Při ukládání ověří relaci, původ požadavku, hodnoty a verzi ceníku a změnu uloží do SQLite. Zastaralý souběžný zápis odmítne. Již otevřené jiné prohlížeče získají nový ceník po obnovení stránky.
 
 Samostatný provoz nevyžaduje ChatGPT, Sites ani původní Jotform. Self-host varianta nahrazuje původní Cloudflare D1 lokální SQLite.
+
+## Historie změn ceníku
+
+Každé úspěšné uložení je v jedné transakci s aktualizací ceníku zapsáno do tabulky `price_audit`: jméno/přezdívka zadaná správcem, čas, verze a seznam změněných polí s hodnotami před a po změně. Historie je dostupná po přihlášení správce; stránka zobrazuje posledních 500 záznamů, databáze uchovává všechny. Záznamy začínají po nasazení této funkce; dřívější změny nelze zpětně rekonstruovat. Jméno je vlastní prohlášení uživatele, ne ověření osobního účtu.
 
 ## Data, první nastavení a provoz
 
@@ -55,7 +59,7 @@ IT nastaví doménu, DNS, HTTPS proxy, přesný `PUBLIC_ORIGIN`, úložiště a 
 
 ## Ověření a odpovědnosti
 
-Aktuální zdroje prošly TypeScript kontrolou a self-host sestavením. **61 cenových testů** a **18 kontrol Node/SQLite** byly úspěšné před přidáním práce mechanika; tuto novou sazbu proto nepokrývají. **21 HTTP kontrol** bylo úspěšných při dřívějším ověření; žádný z těchto testovacích souborů nebyl po poslední změně znovu spuštěn.
+Aktuální zdroje včetně historie změn prošly TypeScript kontrolou a self-host sestavením. **61 cenových testů** a **18 kontrol Node/SQLite** byly úspěšné před přidáním práce mechanika; tuto novou sazbu proto nepokrývají. **21 HTTP kontrol** bylo úspěšných při dřívějším ověření; žádný z těchto testovacích souborů nebyl po poslední změně znovu spuštěn.
 
 **IT** odpovídá za infrastrukturu, HTTPS, dostupnost, zabezpečení dat, zálohy, obnovu a aktualizace. Před převzetím ověří na cílovém prostředí veřejný přístup, přihlášení, ukládání ceníku, zachování dat po restartu a referenční cenu.
 
