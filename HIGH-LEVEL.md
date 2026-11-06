@@ -25,7 +25,7 @@ Vstupy jednotlivých kalkulací a UZ se trvale neukládají. Operátor přenáš
 
 Domácí služby: RMQ Standard, Nadrozměr, Hydraulika, DPV a Odemčení vozidla. Výpočet kombinuje paušál, kilometry nad zahrnutý limit a zvolené doplňky: noc, víkend/svátek, vozíčky, brýle, přetah, mýto, jinou službu a volitelný palivový příplatek. U RMQ služeb zůstávají také vyproštění, ztížená manipulace, čekání a úschova. U DPV a Odemčení vozidla je nahrazuje práce mechanika na místě.
 
-U DPV a Odemčení vozidla zadá operátor dobu práce mechanika po 30 minutách; účtuje se každý započatý půlhodinový interval. Správce nastavuje oddělenou cenu za 30 minut pro každou z obou služeb v CZ, Praha/Brno a SK ceníku. Nové sazby jsou při přechodu nulové a doplní je správce.
+U DPV a Odemčení vozidla zadá operátor dobu práce mechanika po 30 minutách; účtuje se každý započatý půlhodinový interval. Správce nastavuje oddělenou cenu za 30 minut pro každou z obou služeb v CZ, Praha/Brno a SK ceníku. Nové sazby jsou při přechodu nulové a doplní je správce. Všechny domácí služby mají také samostatný marný paušál pro každý region. Zaškrtnutí Marný výjezd nahradí běžný paušál; kilometrové sazby a zvolené další služby se počítají dál. Výchozí marné paušály jsou 0.
 
 V zahraničí operátor vybírá **paušál**, nebo **počet hodin × hodinovou sazbu**, a zadává vlastní sazbu za kilometr. Ruční sazby začínají na **0**. Účtuje se **celá trasa**; v paušálu nejsou zahrnuté kilometry. Jediným doplňkem je **Jiná služba** s vlastním názvem a cenou. Domácí příplatky ani palivo se neúčtují. Při změně měny se příslušné ruční částky resetují.
 

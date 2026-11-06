@@ -113,6 +113,8 @@ Bez importu aplikace použije výchozí ceník v `lib/pricing.ts`. Přiložený 
 
 Správce nastavuje regionální sazby práce mechanika samostatně pro DPV a Odemčení vozidla; výchozí hodnoty jsou 0. Při načtení staršího ceníku se nové sazby automaticky doplní jako nuly.
 
+Každá domácí služba má v každém regionu samostatný marný paušál. Správce jej nastavuje vedle běžného paušálu. Operátor může zaškrtnout Marný výjezd; změní se pouze základní paušál, kilometrové sazby a další vybrané služby se počítají dál. Nové marné paušály jsou 0.
+
 Před prvním spuštěním nebo před prvním nastavením správce vložte do datového úložiště `/data/initial-config.json`. Soubor může obsahovat samotný objekt ceníku nebo odpověď s obálkou `{ "config": ... }`. Hodnoty se ověří společným validátorem; neplatný import zabrání startu. Jakmile databáze obsahuje nastaveného správce a uložený ceník, další spuštění jej seed souborem nepřepisuje.
 
 U čerstvého pojmenovaného volume lze připravit kontejner bez spuštění a soubor do něj přenést:
