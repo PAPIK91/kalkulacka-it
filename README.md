@@ -1,22 +1,22 @@
 # Kalkulačka služeb – předání pro IT
 
-Aktualizované balíčky ze dne 6. 11. 2026 pro nasazení na vlastním serveru.
+Aktualizované balíčky ze dne 13. 11. 2026 pro nasazení na vlastním serveru.
 
 - [Stáhnout kompletní projekt a hotovou aplikaci](Kalkulacka-sluzeb-pro-IT.zip?raw=true)
 - [Stáhnout pouze dokumentaci pro IT](Dokumentace-pro-IT.zip?raw=true)
 - [Číst návod k nasazení](NASAZENI.txt)
 - [Přehled aplikace a architektury pro IT](HIGH-LEVEL.md)
 
-U všech domácích služeb lze zvolit Marný výjezd. Použije samostatný paušál nastavený pro službu a region, zatímco kilometry a další vybrané služby zůstanou účtované. Nové marné paušály jsou 0 a doplní je správce.
+V levém menu je nová funkce **Převod měn a DPH**. Operátor zadá CZK nebo EUR. Částka v CZK se převede na EUR kurzem ČNB a poté se odečte slovenská DPH 23 %; u částky v EUR se odečte pouze DPH. Aplikace zobrazuje datum kurzu.
 
-Ceník spravuje správce po přihlášení heslem. Při uložení zadá jméno nebo přezdívku; Historie změn ukládá autora, čas, upravené položky i původní a nové hodnoty. Jméno je vlastní prohlášení, protože aplikace používá společné správcovské heslo.
+U všech domácích služeb je volba Marný výjezd se samostatným paušálem pro službu a region. Kilometry a další vybrané služby se účtují dál. Ceník spravuje správce heslem; změny jsou evidovány v historii.
 
 Kalkulačka je veřejná. Balíčky neobsahují provozní databázi, hesla ani tokeny.
 
 ## Kontrolní součty SHA-256
 
 ```text
-73fef2f72cb371be022cc8923cf4d7a663aa34367d3765e112a9875ffaa22674  Kalkulacka-sluzeb-pro-IT.zip
-a84ba62ed6975201bcac328670d4765b5f74350a71b2bf00f37a94307dbf3e30  Dokumentace-pro-IT.zip
-b8b00313f1059243707913d12a473a34737730630a98e473daaba0a8d4d16cf6  NASAZENI.txt
+47046895f0f42abca493b1fedeb0db9cc728b5e1b96dfc07ba1374d9b2e8bef8  Kalkulacka-sluzeb-pro-IT.zip
+48e71f66f1e32ae1e7d2530ee12caff6e4d72175f9513dcec0c677a7143698d0  Dokumentace-pro-IT.zip
+a0bd79bf8d45c73bbd1c9fb2a4297b5ec15331f8a16de416d1a3ca49a1b1f571  NASAZENI.txt
 ```

@@ -215,3 +215,7 @@ Tyto výklady jsou technicky implementované a testované, ale jejich obchodní 
 Zahraničí CZ používá měnu a DPH z CZ ceníku, Zahraničí SK z SK ceníku. V uloženém ceníku zůstávají tři původní regiony; přidání zahraničních voleb nevyžaduje migraci databáze.
 
 Operátor vybírá paušál nebo hodinový výpočet (počet hodin × hodinová sazba), zadává vlastní cenu za kilometr a celou trasu. Ruční sazby začínají na 0. Kilometry nejsou zahrnuté v paušálu, účtuje se celá trasa. Jedinou dostupnou doplňkovou službou je Jiná služba s vlastním názvem a cenou; ostatní domácí příplatky a palivo se neúčtují. Při přechodu mezi měnami se příslušné ruční částky resetují, aby se nepřenesla stejná hodnota v jiné měně.
+
+## Převod měn a DPH
+
+V levém menu Pracovní prostor je veřejná funkce Převod měn a DPH. Operátor zadá částku v CZK nebo EUR. Při CZK server načte poslední dostupný denní kurz EUR/CZK z kurzovního lístku ČNB, převede částku na EUR a dopočítá částku bez slovenské DPH 23 %. Při EUR se pouze odečte 23% DPH. Výsledek i mezisoučet se zaokrouhlí na centy; zobrazuje se také datum kurzu. ČNB publikuje denní kurzy v pracovní dny.
